@@ -51,24 +51,31 @@ def run_simulation_mode(params: dict):
 # main.py
 
 def run_generation_mode(params: dict):
-    """高效生成包含演化序列的 AI 訓練資料集。"""
-    num_groups = params['num_groups']
-    num_train_groups = params['num_train_groups']
+    """高效生成包含演化序列的 AI 訓練、驗證和測試資料集。"""
+    num_train = params['num_train_groups']
+    num_val = params['num_validation_groups']
+    num_test = params['num_test_groups']
+    num_total_groups = num_train + num_val + num_test
     num_batches_per_group = params['num_batches_per_group']
     
     print(f"\n--- 模式: AI 序列資料集生成 ---")
-    print(f"任務: {num_groups} 組, 每組 {num_batches_per_group} 個批次。")
+    print(f"任務配置: {num_train} 組訓練, {num_val} 組驗證, {num_test} 組測試 (共 {num_total_groups} 組)。")
+    print(f"每組包含 {num_batches_per_group} 個批次。")
     
     output_path = params['ai_data_output_path']
     _prepare_output_directory(output_path)
-    print(f"所有資料將儲存於 '{output_path}'")
+    
+    # 為不同資料集建立子目錄
+    for split in ['train', 'validation', 'test']:
+        for folder in [f'{split}A', f'{split}B']:
+            os.makedirs(os.path.join(output_path, folder), exist_ok=True)
+    
+    print(f"所有資料將儲存於 '{output_path}' 的對應子目錄中。")
     
     # --- 建立計時器實例 ---
     timer = SimpleTimer()
     
     timer.start("總任務")
-    
-    # ... (路徑準備部分不變) ...
     
     # --- 測量一次性初始化和編譯的時間 ---
     with timer.record("初始化與編譯"):
@@ -77,24 +84,29 @@ def run_generation_mode(params: dict):
         init_params['potential_config_name'] = 'sinusoidal_default'
         initial_field, initial_particles, updated_params = setup_simulation_environment(init_params)
         sim = Simulation(updated_params, initial_field, initial_particles)
-        # 將計時器傳遞給 simulation 物件，以便內部使用
         sim.set_timer(timer)
         print("初始化與編譯完成！\n")
     
     # --- 外層迴圈：遍歷每一組獨立的模擬 ---
-    for i in range(num_groups):
-        print(f"\n--- 正在生成第 {i+1}/{num_groups} 組演化序列 ---")
+    group_counter = 0
+    for split_name, num_groups_in_split in [('train', num_train), ('validation', num_val), ('test', num_test)]:
+        if num_groups_in_split == 0:
+            continue
         
-        with timer.record(f"第 {i} 組模擬 (總共)"):
-            sim.reset_for_new_run(seed=i) 
-            sim.params['dataset_split'] = 'train' if i < num_train_groups else 'test'
-            sim.params['simulation_id'] = i
-            sim.run(num_batches=num_batches_per_group)
+        print(f"\n--- 開始生成 {split_name} 資料集 ({num_groups_in_split} 組) ---")
+        for i in range(num_groups_in_split):
+            group_counter += 1
+            print(f"\n--- 正在生成第 {group_counter}/{num_total_groups} 組 (屬於 {split_name} 集) ---")
+            
+            with timer.record(f"第 {group_counter} 組模擬 (總共)"):
+                sim.reset_for_new_run(seed=group_counter) 
+                sim.params['dataset_split'] = split_name
+                sim.params['simulation_id'] = group_counter
+                sim.run(num_batches=num_batches_per_group)
 
     timer.stop("總任務")
     print("\n序列資料集生成完畢！")
     
-    # --- 在程式結束時，打印最終的計時報告 ---
     timer.report()
 
 # 我們需要在 Simulation 類別中新增一個 reset_for_new_run 方法

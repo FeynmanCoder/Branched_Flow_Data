@@ -122,8 +122,9 @@ CONFIG = {
         'quiet_mode': True, #
 
         # AI 資料集生成任務的宏觀參數
-        'num_groups': 2,          # 總共要生成多少組獨立的演化序列
         'num_train_groups': 1,   # 其中有多少組屬於訓練集
+        'num_validation_groups': 1, # 新增：其中有多少組屬於驗證集
+        'num_test_groups': 1,    # 其中有多少組屬於測試集 (取代舊的 num_groups)
         'num_batches_per_group': 1 # 每組演化序列包含多少個批次
 }}
 
