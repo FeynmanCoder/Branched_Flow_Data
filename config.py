@@ -2,6 +2,10 @@
 
 import numpy as np
 
+# --- 新增：超算平台開關 ---
+# 設為 True，將使用超算平台的路徑；設為 False，將使用本地路徑。
+ON_HPC = False
+
 # ==============================================================================
 # 1. 基礎物理與網格設定
 # ==============================================================================
@@ -77,6 +81,9 @@ if auto_sync_image_size:
 def get_config() -> dict:
     """返回唯一的資料生成設定字典。"""
     
+    # --- 根據開關決定路徑 ---
+    ai_data_path = '/lustre/home/2400011491/data/ai_train_data' if ON_HPC else 'ai_training_data'
+
     # --- 基礎參數直接整合 ---
     params = {
         # --- 後端與高層配置 ---
@@ -86,7 +93,7 @@ def get_config() -> dict:
         # --- 路徑設定 ---
         'default_export_path': 'exported_data', # 雖然不啟用，但保留以防萬一
         'plot_output_path': 'simulation_plots', # 同上
-        'ai_data_output_path': 'ai_training_data',
+        'ai_data_output_path': ai_data_path,
 
         # --- 核心物理與網格參數 ---
         'm': 1.0,
@@ -100,7 +107,7 @@ def get_config() -> dict:
         'dx_potential': dx_potential,
         'dy_potential': dy_potential,
         'interaction_cutoff_radius': 5.0,
-        'precision': 'float32',
+        'precision': 'float64',
         
         # --- 密度圖/軌跡圖的畫素桶 (bins) 尺寸 ---
         'density_bins_y': 500,
