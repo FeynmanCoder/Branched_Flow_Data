@@ -1,0 +1,19 @@
+# requirements.txt
+
+# 核心物理計算與數據處理
+numpy
+scipy
+
+# GPU 加速 (根據您的 nvidia-smi 顯示 CUDA 12.6)
+cupy-cuda12x
+numba
+
+# 數據可視化與圖片處理
+matplotlib
+Pillow
+
+# 進度條顯示
+tqdm
+
+# 用於安裝本地套件
+setuptools
