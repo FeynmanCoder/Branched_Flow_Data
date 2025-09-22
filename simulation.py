@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from core.backends import get_backend
 from core.field import FieldData
-from analysis.io import save_ai_training_data
+from analysis.io import save_data_pair
 from physics.potentials import fourier_synthesis_gpu
 
 class Simulation:
@@ -42,10 +42,10 @@ class Simulation:
         fy[-1, :] = - (potential_matrix_gpu[-1, :] - potential_matrix_gpu[-2, :]) / dy
         return fy
 
-    def reset_for_new_run(self, seed: int):
+    def reset_for_new_sequence(self, seed: int):
         """
-        重設模擬狀態以開始一次新的獨立演化。
-        這在資料生成模式中至關重要，確保每組資料都是從一個新的隨機勢場開始。
+        重設模擬狀態以開始一次新的獨立演化序列。
+        這在資料生成模式中至關重要，確保每個序列的資料都是從一個新的隨機勢場開始。
         """
         p = self.params
         
@@ -61,7 +61,7 @@ class Simulation:
         # 將其轉換為力場並更新到 self.force_field
         self.force_field = self._convert_potential_to_force_gpu(potential_gpu)
         if not self.is_quiet:
-            print(f"  [重設] 已為第 {seed} 組生成新的隨機種子力場。")
+            print(f"  [重設] 已為第 {seed} 個序列生成新的隨機種子力場。")
             
     def run(self, num_batches: int = 1):
         """
@@ -70,7 +70,7 @@ class Simulation:
         """
         p = self.params
         
-        progress_bar = tqdm(range(1, num_batches + 1), desc=f"  組 {p.get('simulation_id', 0)} 批次進度", leave=False, disable=self.is_quiet)
+        progress_bar = tqdm(range(1, num_batches + 1), desc=f"  序列 {p.get('sequence_id', 0)} 批次進度", leave=False, disable=self.is_quiet)
         
         for batch_num in progress_bar:
             # 核心物理計算
@@ -81,7 +81,7 @@ class Simulation:
 
             # 資料處理與儲存
             with self.timer.record("資料處理與存檔"):
-                save_ai_training_data(
+                save_data_pair(
                     params=p,
                     batch_num=batch_num,
                     potential_field=self.force_field,

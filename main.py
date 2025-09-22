@@ -24,17 +24,17 @@ def _prepare_output_directory(path: str, clean: bool = True):
     os.makedirs(path, exist_ok=True)
     print(f"輸出目錄 '{path}' 已準備就緒。")
 
-def run_generation(params: dict):
+def generate_dataset(params: dict):
     """高效生成包含演化序列的 AI 訓練、驗證和測試資料集。"""
-    num_train = params['num_train_groups']
-    num_val = params['num_validation_groups']
-    num_test = params['num_test_groups']
-    num_total_groups = num_train + num_val + num_test
-    num_batches_per_group = params['num_batches_per_group']
+    num_train = params['num_train_sequences']
+    num_val = params['num_validation_sequences']
+    num_test = params['num_test_sequences']
+    num_total_sequences = num_train + num_val + num_test
+    num_batches_per_sequence = params['num_batches_per_sequence']
     
-    print(f"\n--- AI 序列資料集生成任務 ---")
-    print(f"任務配置: {num_train} 組訓練, {num_val} 組驗證, {num_test} 組測試 (共 {num_total_groups} 組)。")
-    print(f"每組包含 {num_batches_per_group} 個批次。")
+    print(f"\n--- AI 資料集生成任務 ---")
+    print(f"任務配置: {num_train} 訓練序列, {num_val} 驗證序列, {num_test} 測試序列 (共 {num_total_sequences} 個)。")
+    print(f"每個序列包含 {num_batches_per_sequence} 個批次。")
     
     output_path = params['ai_data_output_path']
     _prepare_output_directory(output_path)
@@ -59,22 +59,22 @@ def run_generation(params: dict):
         sim.set_timer(timer)
         print("初始化與編譯完成！\n")
     
-    group_counter = 0
-    for split_name, num_groups_in_split in [('train', num_train), ('validation', num_val), ('test', num_test)]:
-        if num_groups_in_split == 0:
+    sequence_counter = 0
+    for split_name, num_sequences_in_split in [('train', num_train), ('validation', num_val), ('test', num_test)]:
+        if num_sequences_in_split == 0:
             continue
         
-        print(f"\n--- 開始生成 {split_name} 資料集 ({num_groups_in_split} 組) ---")
-        for i in range(num_groups_in_split):
-            group_counter += 1
-            print(f"\n--- 正在生成第 {group_counter}/{num_total_groups} 組 (屬於 {split_name} 集) ---")
+        print(f"\n--- 開始生成 {split_name} 資料集 ({num_sequences_in_split} 個序列) ---")
+        for i in range(num_sequences_in_split):
+            sequence_counter += 1
+            print(f"\n--- 正在生成第 {sequence_counter}/{num_total_sequences} 個序列 (屬於 {split_name} 集) ---")
             
-            with timer.record(f"第 {group_counter} 組模擬"):
-                sim.reset_for_new_run(seed=group_counter) 
+            with timer.record(f"第 {sequence_counter} 個序列模擬"):
+                sim.reset_for_new_sequence(seed=sequence_counter) 
                 sim.params['dataset_split'] = split_name
-                sim.params['simulation_id'] = group_counter
+                sim.params['sequence_id'] = sequence_counter
                 # 在此模式下，run 函數只負責計算和儲存 AI 資料
-                sim.run(num_batches=num_batches_per_group)
+                sim.run(num_batches=num_batches_per_sequence)
 
     timer.stop("總任務")
     print("\n序列資料集生成完畢！")
@@ -109,7 +109,7 @@ def main():
             final_params[key] = value
 
     # 直接執行資料生成任務
-    run_generation(final_params)
+    generate_dataset(final_params)
 
 if __name__ == "__main__":
     main()

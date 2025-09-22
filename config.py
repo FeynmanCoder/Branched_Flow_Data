@@ -4,7 +4,7 @@ import numpy as np
 
 # --- 新增：超算平台開關 ---
 # 設為 True，將使用超算平台的路徑；設為 False，將使用本地路徑。
-ON_HPC = False
+IS_HPC_ENVIRONMENT = False
 
 # ==============================================================================
 # 1. 基礎物理與網格設定
@@ -82,7 +82,7 @@ def get_config() -> dict:
     """返回唯一的資料生成設定字典。"""
     
     # --- 根據開關決定路徑 ---
-    ai_data_path = '/lustre/home/2400011491/data/ai_train_data' if ON_HPC else 'ai_training_data'
+    ai_data_path = '/lustre/home/2400011491/data/ai_train_data' if IS_HPC_ENVIRONMENT else 'ai_training_data'
 
     # --- 基礎參數直接整合 ---
     params = {
@@ -128,14 +128,14 @@ def get_config() -> dict:
         'potential_amplitude': 0.1,
         
         # --- 執行效率與資料集設定 ---
-        'num_batches_per_group': 1,
+        'num_batches_per_sequence': 1,
         'use_log_scale_plots': True,
         'quiet_mode': True,
 
         # --- AI 資料集生成任務的宏觀參數 ---
-        'num_train_groups': 1,
-        'num_validation_groups': 1,
-        'num_test_groups': 1,
+        'num_train_sequences': 1,
+        'num_validation_sequences': 1,
+        'num_test_sequences': 1,
     }
 
     # --- 根據開關狀態，有條件地覆寫 density_bins ---

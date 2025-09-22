@@ -4,7 +4,7 @@ import os
 import numpy as np
 from typing import Dict, Any
 
-def save_ai_training_data(params: Dict[str, Any], batch_num: int, potential_field, y_trajectory, weights, xp):
+def save_data_pair(params: Dict[str, Any], batch_num: int, potential_field, y_trajectory, weights, xp):
     """
     高效儲存 AI 訓練所需的一對資料 (勢能場 -> 粒子密度)。
     """
@@ -26,10 +26,10 @@ def save_ai_training_data(params: Dict[str, Any], batch_num: int, potential_fiel
     # --- 2. 準備儲存路徑 ---
     base_path = params['ai_data_output_path']
     split = params.get('dataset_split', 'train') # 'train', 'validation', or 'test'
-    sim_id = params.get('simulation_id', 0)
+    sequence_id = params.get('sequence_id', 0)
     
-    # 檔名格式: group_XXXX_batch_YYYY.npy
-    filename = f"group_{sim_id:04d}_batch_{batch_num:03d}.npy"
+    # 檔名格式: sequence_XXXX_batch_YYYY.npy
+    filename = f"sequence_{sequence_id:04d}_batch_{batch_num:03d}.npy"
     
     path_A = os.path.join(base_path, f"{split}A", filename) # 勢能場
     path_B = os.path.join(base_path, f"{split}B", filename) # 粒子密度
@@ -43,4 +43,4 @@ def save_ai_training_data(params: Dict[str, Any], batch_num: int, potential_fiel
         np.save(path_A, potential_cpu)
         np.save(path_B, density_cpu)
     except IOError as e:
-        print(f"警告：寫入 AI 資料失敗 (ID: {sim_id}, Batch: {batch_num}): {e}")
+        print(f"警告：寫入 AI 資料失敗 (ID: {sequence_id}, Batch: {batch_num}): {e}")
