@@ -61,7 +61,7 @@ echo "------------------------------------------------------"
 # --- 7. 執行 AI 資料集生成腳本 ---
 echo "步驟 6: 開始運行 AI 資料集生成..."
 # 【已更新】直接執行 main.py 並指定 generate 模式和輸出路徑
-python main.py --mode generate --ai-data-output-path /lustre/home/2400011491/data/ai_train_data
+python main.py --mode generate --ai-data-output-path /lustre/home/2400011491/data/ai_train_data/new_data
 echo "------------------------------------------------------"
 
 echo "資料集生成完成。"
