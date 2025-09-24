@@ -4,25 +4,70 @@ import argparse
 import os
 import sys
 
-def visualize_npy(filepath: str, title: str = None, cmap: str = 'viridis', use_log_scale: bool = False, save_path: str = None):
+def visualize_file_data(filepath: str, title: str = None, cmap: str = 'viridis', use_log_scale: bool = False, save_path: str = None):
     """
-    載入一個 .npy 檔案並將其視覺化為熱圖。
-    (此函式主體與之前完全相同，無需修改)
+    載入一個 .npy 或 .npz 檔案並將其視覺化為熱圖。
+    如果檔案是 .npz 且包含多個陣列，會提示使用者選擇要視覺化的陣列。
     """
     # --- 1. 檢查檔案是否存在 ---
     if not os.path.exists(filepath):
         print(f"錯誤：找不到檔案 '{filepath}'")
         return
 
-    # --- 2. 載入 .npy 檔案 ---
+    data = None
+    selected_array_name = None
+
+    # --- 2. 根據檔案類型載入資料 ---
     try:
-        data = np.load(filepath)
+        file_ext = os.path.splitext(filepath)[1]
+        
+        if file_ext == '.npy':
+            data = np.load(filepath)
+            selected_array_name = "N/A (npy file)"
+        elif file_ext == '.npz':
+            npz_file = np.load(filepath)
+            arrays = npz_file.files
+            
+            if not arrays:
+                print(f"錯誤：.npz 檔案 '{filepath}' 中不包含任何陣列。")
+                return
+            
+            if len(arrays) == 1:
+                selected_array_name = arrays[0]
+                data = npz_file[selected_array_name]
+            else:
+                # 如果有多個陣列，提示使用者選擇
+                print(f"\n在 '{os.path.basename(filepath)}' 中找到多個陣列:")
+                for i, name in enumerate(arrays):
+                    print(f"  [{i+1}] {name}")
+                
+                while True:
+                    try:
+                        choice = input(f"請選擇要視覺化的陣列編號 (1-{len(arrays)}): ")
+                        choice_idx = int(choice) - 1
+                        if 0 <= choice_idx < len(arrays):
+                            selected_array_name = arrays[choice_idx]
+                            data = npz_file[selected_array_name]
+                            break
+                        else:
+                            print("無效的選擇，請重新輸入。")
+                    except (ValueError, IndexError):
+                        print("無效的輸入，請輸入數字。")
+                    except (KeyboardInterrupt, EOFError):
+                        print("\n操作已取消。")
+                        return
+        else:
+            print(f"錯誤：不支援的檔案類型 '{file_ext}'。僅支援 .npy 和 .npz。")
+            return
+
     except Exception as e:
         print(f"錯誤：載入檔案 '{filepath}' 失敗: {e}")
         return
 
     # --- 3. 打印數據資訊 (非常有用於除錯) ---
     print(f"\n--- 檔案資訊: {os.path.basename(filepath)} ---")
+    if selected_array_name:
+        print(f"  - 正在顯示陣列: '{selected_array_name}'")
     print(f"  - 陣列維度 (Shape): {data.shape}")
     print(f"  - 資料類型 (dtype): {data.dtype}")
     print(f"  - 最大值 (Max): {np.max(data):.4f}")
@@ -41,7 +86,11 @@ def visualize_npy(filepath: str, title: str = None, cmap: str = 'viridis', use_l
     fig, ax = plt.subplots(figsize=(10, 8))
     im = ax.imshow(display_data, cmap=cmap, origin='lower', aspect='auto')
     fig.colorbar(im, ax=ax)
+    
     plot_title = title if title else os.path.basename(filepath)
+    if selected_array_name and 'npy' not in selected_array_name:
+        plot_title += f" - [{selected_array_name}]"
+
     ax.set_title(plot_title + log_info, fontsize=16)
     ax.set_xlabel("X 軸 (像素)")
     ax.set_ylabel("Y 軸 (像素)")
@@ -65,24 +114,24 @@ def interactive_mode(search_path='ai_training_data'):
         print(f"錯誤：找不到 '{search_path}' 資料夾。請確保您提供了正確的路徑。")
         return
 
-    print(f"正在掃描 '{search_path}' 中的 .npy 檔案...")
-    npy_files = []
+    print(f"正在掃描 '{search_path}' 中的 .npy 和 .npz 檔案...")
+    found_files = []
     # 使用 os.walk 來遞迴掃描所有子資料夾
     for root, _, files in os.walk(search_path):
         for file in sorted(files):
-            if file.endswith('.npy'):
-                npy_files.append(os.path.join(root, file))
+            if file.endswith(('.npy', '.npz')):
+                found_files.append(os.path.join(root, file))
 
-    if not npy_files:
-        print(f"在 '{search_path}' 中找不到任何 .npy 檔案。")
+    if not found_files:
+        print(f"在 '{search_path}' 中找不到任何 .npy 或 .npz 檔案。")
         return
 
     # 對檔案路徑進行排序，確保每次顯示順序一致
-    npy_files.sort()
+    found_files.sort()
 
     while True:
         print(f"\n--- 請選擇要視覺化的檔案 (正在瀏覽: {search_path}) ---")
-        for i, f_path in enumerate(npy_files):
+        for i, f_path in enumerate(found_files):
             display_path = os.path.relpath(f_path).replace("\\", "/")
             print(f"  [{i+1}] {display_path}")
         print("  [q] 退出")
@@ -93,16 +142,16 @@ def interactive_mode(search_path='ai_training_data'):
                 break
             
             choice_idx = int(choice) - 1
-            if 0 <= choice_idx < len(npy_files):
-                selected_file = npy_files[choice_idx]
+            if 0 <= choice_idx < len(found_files):
+                selected_file = found_files[choice_idx]
                 
                 cmap = 'coolwarm' if 'A' in selected_file else 'inferno'
                 log_choice = input("是否使用對數尺度進行視覺化? (y/N): ").lower()
                 use_log = log_choice == 'y'
                 
-                visualize_npy(selected_file, cmap=cmap, use_log_scale=use_log)
+                visualize_file_data(selected_file, cmap=cmap, use_log_scale=use_log)
             else:
-                print(f"無效的選擇。請輸入 1 到 {len(npy_files)} 之間的數字。")
+                print(f"無效的選擇。請輸入 1 到 {len(found_files)} 之間的數字。")
 
         except ValueError:
             print("無效的輸入，請輸入數字。")
@@ -112,13 +161,13 @@ def interactive_mode(search_path='ai_training_data'):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="一個用於視覺化 .npy 陣列檔案的通用工具。",
+        description="一個用於視覺化 .npy 或 .npz 陣列檔案的通用工具。",
         formatter_class=argparse.RawTextHelpFormatter
     )
     
     # 將 filepath 設為可選參數
     parser.add_argument("filepath", type=str, nargs='?', default=None, 
-                        help="要直接視覺化的 .npy 檔案的路徑。\n如果留空，則進入互動式瀏覽模式。")
+                        help="要直接視覺化的 .npy 或 .npz 檔案的路徑。\n如果留空，則進入互動式瀏覽模式。")
     
     # 新增 --folder 參數
     parser.add_argument("--folder", "-f", type=str, default=None,
@@ -133,7 +182,7 @@ if __name__ == "__main__":
     
     if args.filepath:
         # 模式一：如果提供了檔案路徑，則直接視覺化該檔案
-        visualize_npy(args.filepath, args.title, args.cmap, args.log, args.save)
+        visualize_file_data(args.filepath, args.title, args.cmap, args.log, args.save)
     else:
         # 模式二：如果未提供檔案路徑，則進入互動模式
         # 如果使用者指定了 --folder，則瀏覽該資料夾，否則使用預設路徑
