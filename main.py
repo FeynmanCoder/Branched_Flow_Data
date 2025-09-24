@@ -87,29 +87,34 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter
     )
     
+    # 添加模式參數
+    parser.add_argument('--mode', type=str, default='generate', choices=['generate'], help='選擇程式運行的模式 (目前僅支援 "generate")')
+
     base_params = get_config()
     print("提示：已載入 config.py 中的預設設定。")
 
     # 動態地為所有可配置參數添加命令行接口
     for key, value in base_params.items():
-        arg_type = type(value)
-        if arg_type is bool:
-            # 對於布林值，使用 action='store_true' 或 'store_false'
-            # 這裡簡化處理，假設大部分布林開關是為了覆寫為 True
-            parser.add_argument(f'--{key.replace("_", "-")}', action=argparse.BooleanOptionalAction, default=None)
+        arg_name = f'--{key.replace("_", "-")}'
+        if isinstance(value, bool):
+            parser.add_argument(arg_name, action=argparse.BooleanOptionalAction, default=None)
         else:
-            parser.add_argument(f'--{key.replace("_", "-")}', type=arg_type, default=None, help=f'覆寫 {key} 參數 (預設: {value})')
+            parser.add_argument(arg_name, type=type(value), default=None, help=f'覆寫 {key} 參數 (預設: {value})')
     
     args = parser.parse_args()
     
     # 將命令行參數覆寫到基礎設定上
     final_params = base_params.copy()
     for key, value in vars(args).items():
-        if value is not None:
+        if value is not None and key != 'mode': # 'mode' 參數另外處理
             final_params[key] = value
 
-    # 直接執行資料生成任務
-    generate_dataset(final_params)
+    # 根據模式執行對應的任務
+    if args.mode == 'generate':
+        generate_dataset(final_params)
+    else:
+        print(f"錯誤：未知的模式 '{args.mode}'。")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

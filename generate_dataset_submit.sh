@@ -31,7 +31,7 @@ echo "------------------------------------------------------"
 
 # --- 3. 定義並設定工作目錄 ---
 # 【已更新】使用您提供的路徑
-PROJECT_ROOT="/lustre/home/2400011491/work/ai_branched_flow/train_data"
+PROJECT_ROOT="/lustre/home/2400011491/work/ai_branched_flow/Branched_Flow_Data"
 echo "步驟 2: 設定工作目錄..."
 cd $PROJECT_ROOT
 echo "目前工作目錄: $(pwd)"
@@ -60,8 +60,8 @@ echo "------------------------------------------------------"
 
 # --- 7. 執行 AI 資料集生成腳本 ---
 echo "步驟 6: 開始運行 AI 資料集生成..."
-# 【已更新】直接執行 main.py 並指定 generate 模式
-python main.py --mode generate
+# 【已更新】直接執行 main.py 並指定 generate 模式和輸出路徑
+python main.py --mode generate --ai-data-output-path /lustre/home/2400011491/data/ai_train_data
 echo "------------------------------------------------------"
 
 echo "資料集生成完成。"
