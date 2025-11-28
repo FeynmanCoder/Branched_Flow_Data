@@ -61,7 +61,21 @@ echo "------------------------------------------------------"
 # --- 7. 執行 AI 資料集生成腳本 ---
 echo "步驟 6: 開始運行 AI 資料集生成..."
 # 【已更新】直接執行 main.py 並指定 generate 模式和輸出路徑
-python main.py --mode generate --ai-data-output-path /lustre/home/2400011491/data/ai_train_data/new_data
+# ... (前面的代码不变)
+
+# --- 7. 執行 AI 資料集生成腳本 ---
+echo "步驟 6: 開始運行 AI 資料集生成..."
+# 【已更新】直接執行 main.py 並指定 generate 模式和輸出路徑
+python main.py \
+    --ai-data-output-path "/lustre/home/2400011491/data/ai_train_data_v1" \
+    --potential-alpha-min 3.5 \
+    --potential-alpha-max 4.5 \
+    --potential-amplitude-min 0.05 \
+    --potential-amplitude-max 0.15 \
+    --num-batches-per-sequence 2 \
+    --num-train-sequences 1000 \
+    --num-validation-sequences 100 \
+    --num-test-sequences 100
 echo "------------------------------------------------------"
 
 echo "資料集生成完成。"

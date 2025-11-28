@@ -137,6 +137,15 @@ def main():
         if value is not None and key != 'mode': # 'mode' 參數另外處理
             final_params[key] = value
 
+    # --- 打印所有生效的參數配置，方便追溯 ---
+    print("\n" + "="*60)
+    print("【運行配置報告 (Runtime Configuration Report)】")
+    print(f"運行模式 (Mode): {args.mode}")
+    print("-" * 60)
+    for key in sorted(final_params.keys()):
+        print(f"{key:<35}: {final_params[key]}")
+    print("="*60 + "\n")
+
     # 根據模式執行對應的任務
     if args.mode == 'generate':
         generate_dataset(final_params)
