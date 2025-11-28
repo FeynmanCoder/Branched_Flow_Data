@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 import shutil
+import random
 from timer import SimpleTimer
 
 # --- 專案路徑設定 ---
@@ -70,6 +71,33 @@ def generate_dataset(params: dict):
             print(f"\n--- 正在生成第 {sequence_counter}/{num_total_sequences} 個序列 (屬於 {split_name} 集) ---")
             
             with timer.record(f"第 {sequence_counter} 個序列模擬"):
+                # --- 隨機化勢能場參數 ---
+                if sim.params.get('enable_random_potential_params', False):
+                    # 啟用隨機化：在 [min, max] 範圍內採樣
+                    alpha_min = sim.params['potential_alpha_min']
+                    alpha_max = sim.params['potential_alpha_max']
+                    sim.params['potential_alpha'] = random.uniform(alpha_min, alpha_max)
+                    
+                    amp_min = sim.params['potential_amplitude_min']
+                    amp_max = sim.params['potential_amplitude_max']
+                    sim.params['potential_amplitude'] = random.uniform(amp_min, amp_max)
+                else:
+                    # 禁用隨機化：確保使用預設固定值 (防止上一輪的隨機值殘留)
+                    # 注意：這裡假設 config.py 中的 'potential_alpha' 已經被初始化為 DEFAULT 值
+                    # 但為了保險起見，我們不顯式重置回 DEFAULT，而是依賴 sim.params 初始載入時的值。
+                    # 不過，如果 sim 对象是复用的，我们需要重置它。
+                    # 让我们查看 config.py，发现 'potential_alpha' 键存储的就是 DEFAULT 值。
+                    # 所以如果我们在上一轮循环修改了 sim.params['potential_alpha']，这一轮必须改回来。
+                    # 但由于我们无法直接访问原始的 DEFAULT 常量（它们在 user_config 中），
+                    # 最好的做法是：在每次循环开始时，如果禁用了随机化，就不做任何修改？
+                    # 不行，因为上一轮可能启用了随机化（虽然在这个脚本里配置是全局不变的）。
+                    # 实际上，在这个脚本运行期间，enable_random_potential_params 是常量。
+                    # 所以如果它是 False，我们根本不需要动 sim.params，它自然保持初始值（即 DEFAULT）。
+                    pass
+
+                if not sim.is_quiet:
+                    print(f"  [參數] Alpha: {sim.params['potential_alpha']:.4f}, Amplitude: {sim.params['potential_amplitude']:.4f}")
+
                 sim.reset_for_new_sequence(seed=sequence_counter) 
                 sim.params['dataset_split'] = split_name
                 sim.params['sequence_id'] = sequence_counter

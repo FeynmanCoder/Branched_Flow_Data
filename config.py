@@ -1,28 +1,7 @@
 # branched_flow/config.py
 
 import numpy as np
-
-# --- 新增：超算平台開關 ---
-# 設為 True，將使用超算平台的路徑；設為 False，將使用本地路徑。
-IS_HPC_ENVIRONMENT = False
-
-# ==============================================================================
-# 1. 基礎物理與網格設定
-# ==============================================================================
-
-# --- 物理空間尺寸 ---
-x_end = 20.0
-y_end = 2 * np.pi * 3
-
-# --- 勢能場網格步長 (這也將決定 AI 圖片的基礎解析度) ---
-dx_potential = 0.025
-dy_potential = 0.025
-
-# --- AI 圖片尺寸自動同步開關 ---
-# 設為 True: 將強制 density_bins_x/y 與物理網格尺寸一致，確保輸入和輸出的圖片大小相同。
-# 設為 False: 您可以手動設定下面的 density_bins_x/y，用於其他非 AI 生成的分析任務。
-auto_sync_image_size = True
-
+from user_config import *
 
 # ==============================================================================
 # 2. 基礎參數 (所有模式共享)
@@ -82,7 +61,7 @@ def get_config() -> dict:
     """返回唯一的資料生成設定字典。"""
     
     # --- 根據開關決定路徑 ---
-    ai_data_path = '/lustre/home/2400011491/data/ai_train_data' if IS_HPC_ENVIRONMENT else 'ai_training_data'
+    ai_data_path = '/lustre/home/2400011491/data/ai_train_data' if is_hpc_environment else 'ai_training_data'
 
     # --- 基礎參數直接整合 ---
     params = {
@@ -124,18 +103,27 @@ def get_config() -> dict:
         'potential_update_rule': 'accumulate',
         
         # --- 關鍵的隨機勢能場參數 ---
-        'potential_alpha': 4.0,
-        'potential_amplitude': 0.1,
+        'enable_random_potential_params': enable_random_potential_params,
+        
+        # 隨機範圍
+        'potential_alpha_min': potential_alpha_min,
+        'potential_alpha_max': potential_alpha_max,
+        'potential_amplitude_min': potential_amplitude_min,
+        'potential_amplitude_max': potential_amplitude_max,
+        
+        # 固定預設值
+        'potential_alpha': potential_alpha_default,
+        'potential_amplitude': potential_amplitude_default,
         
         # --- 執行效率與資料集設定 ---
-        'num_batches_per_sequence': 1,
+        'num_batches_per_sequence': num_batches_per_sequence,
         'use_log_scale_plots': True,
         'quiet_mode': True,
 
         # --- AI 資料集生成任務的宏觀參數 ---
-        'num_train_sequences': 1,
-        'num_validation_sequences': 1,
-        'num_test_sequences': 1,
+        'num_train_sequences': num_train_sequences,
+        'num_validation_sequences': num_validation_sequences,
+        'num_test_sequences': num_test_sequences,
     }
 
     # --- 根據開關狀態，有條件地覆寫 density_bins ---
